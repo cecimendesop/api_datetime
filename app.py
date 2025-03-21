@@ -1,42 +1,39 @@
-from flask import Flask, request, jsonify
-
+from flask import Flask, jsonify
 from datetime import datetime
 
 app = Flask(__name__)
 
 
-@app.route('/verificar-data/<ano>-<mes>-<dia>', methods=['GET'])
-def verificar_data(ano,mes,dia):
+@app.route('/verificar-data/<data>', methods=['GET'])
+def verificar_data(data):
     try:
-        ano = int(ano)
-        mes = int(mes)
-        dia = int(dia)
-
-        data_informada = datetime(ano, mes, dia).date()
+        data_informada = datetime.strptime(data, "%Y-%m-%d").date()
         data_atual = datetime.now().date()
-
-        status = ""
-        dias_diferenca = data_atual - data_informada
-        meses_diferenca = (data_atual.year - data_informada.year) * 12
-        anos_diferenca = data_atual.year - data_informada.year
-
+        diferenca_dias = (data_informada - data_atual).days
+        diferenca_meses = (data_informada.year - data_atual.year) * 12 + (data_informada.month - data_atual.month)
+        diferenca_anos = data_informada.year - data_atual.year
 
         if data_informada > data_atual:
             status = "futuro"
         elif data_informada < data_atual:
             status = "passado"
         else:
-            status = "presente"
+            return jsonify({"situacao": "presente", "diferenca": {"dias": 0, "meses": 0, "anos": 0}})
 
-            return jsonify({
-                'status': status,
-                'dias_diferenca': data_informada - data_atual,
-                'meses_diferenca': mes - ano,
-                'anos_diferenca': ano - ano,
-            })
+        return jsonify({
+            "situacao": status,
+            "diferenca": {
+                "dias": diferenca_dias,
+                "meses": diferenca_meses,
+                "anos": diferenca_anos
+            }
+        })
     except ValueError:
-        return jsonify({})
+        return jsonify({"erro": "Formato de data inválido. Use YYYY-MM-DD."}), 400
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
